@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2012 the original author or authors.
+ * Copyright 2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the 'License');
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,9 @@ implies this is the client used by default, however you can configure named clie
 by adding a new config block. For example connecting to a client whose name is 'internal'
 can be done in this way
 
-    stores {
+    cacheManagers {
         internal {
-            host = 'http://localhost:8090'
+            url = 'classpath://ehcache-internal.xml'
         }
     }
 
@@ -151,7 +151,7 @@ This implementation may be used in the following way
     }
 
 
-[1]: http://code.google.com/p/ehcache/
+[1]: http://ehcache.org
 [2]: https://github.com/aalmiray/griffon_sample_apps/tree/master/persistence/ehcache
 '''
 }
