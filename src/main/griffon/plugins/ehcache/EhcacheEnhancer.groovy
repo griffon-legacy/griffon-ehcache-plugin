@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,29 @@
 
 package griffon.plugins.ehcache
 
+import griffon.util.CallableWithArgs
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import griffon.util.CallableWithArgs
 
 /**
  * @author Andres Almiray
  */
 final class EhcacheEnhancer {
+    private static final String DEFAULT = 'default'
     private static final Logger LOG = LoggerFactory.getLogger(EhcacheEnhancer)
 
     private EhcacheEnhancer() {}
-
-    static void enhance(MetaClass mc, EhcacheProvider provider = CacheManagerHolder.instance) {
-        if (LOG.debugEnabled) LOG.debug("Enhancing $mc with $provider")
+    
+    static void enhance(MetaClass mc, EhcacheProvider provider = DefaultEhcacheProvider.instance) {
+        if(LOG.debugEnabled) LOG.debug("Enhancing $mc with $provider")
         mc.withEhcache = {Closure closure ->
-            provider.withEhcache('default', closure)
+            provider.withEhcache(DEFAULT, closure)
         }
         mc.withEhcache << {String cacheManagerName, Closure closure ->
             provider.withEhcache(cacheManagerName, closure)
         }
         mc.withEhcache << {CallableWithArgs callable ->
-            provider.withEhcache('default', callable)
+            provider.withEhcache(DEFAULT, callable)
         }
         mc.withEhcache << {String cacheManagerName, CallableWithArgs callable ->
             provider.withEhcache(cacheManagerName, callable)

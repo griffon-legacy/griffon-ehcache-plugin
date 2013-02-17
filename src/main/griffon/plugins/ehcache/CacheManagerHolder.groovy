@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,63 +17,56 @@
 package griffon.plugins.ehcache
 
 import net.sf.ehcache.CacheManager
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import griffon.core.GriffonApplication
 import griffon.util.ApplicationHolder
-import griffon.util.CallableWithArgs
 import static griffon.util.GriffonNameUtils.isBlank
 
 /**
  * @author Andres Almiray
  */
-@Singleton
-class CacheManagerHolder implements EhcacheProvider {
-    private static final Logger LOG = LoggerFactory.getLogger(CacheManagerHolder)
+class CacheManagerHolder {
+    private static final String DEFAULT = 'default'
     private static final Object[] LOCK = new Object[0]
     private final Map<String, CacheManager> cacheManagers = [:]
+
+    private static final CacheManagerHolder INSTANCE
+
+    static {
+        INSTANCE = new CacheManagerHolder()
+    }
+
+    static CacheManagerHolder getInstance() {
+        INSTANCE
+    }
 
     String[] getCacheManagerNames() {
         List<String> cacheManagerNames = new ArrayList().addAll(cacheManagers.keySet())
         cacheManagerNames.toArray(new String[cacheManagerNames.size()])
     }
 
-    CacheManager getCacheManager(String cacheManagerName = 'default') {
-        if (isBlank(cacheManagerName)) cacheManagerName = 'default'
+    CacheManager getCacheManager(String cacheManagerName = DEFAULT) {
+        if (isBlank(cacheManagerName)) cacheManagerName = DEFAULT
         retrieveCacheManager(cacheManagerName)
     }
 
-    void setCacheManager(String cacheManagerName = 'default', CacheManager cacheManager) {
-        if (isBlank(cacheManagerName)) cacheManagerName = 'default'
+    void setCacheManager(String cacheManagerName = DEFAULT, CacheManager cacheManager) {
+        if (isBlank(cacheManagerName)) cacheManagerName = DEFAULT
         storeCacheManager(cacheManagerName, cacheManager)
     }
 
-    Object withEhcache(String cacheManagerName = 'default', Closure closure) {
-        CacheManager cacheManager = fetchCacheManager(cacheManagerName)
-        if (LOG.debugEnabled) LOG.debug("Executing statement on cacheManager '$cacheManagerName'")
-        return closure(cacheManagerName, cacheManager)
-    }
-
-    public <T> T withEhcache(String cacheManagerName = 'default', CallableWithArgs<T> callable) {
-        CacheManager cacheManager = fetchCacheManager(cacheManagerName)
-        if (LOG.debugEnabled) LOG.debug("Executing statement on cacheManager '$cacheManagerName'")
-        callable.args = [cacheManagerName, cacheManager] as Object[]
-        return callable.call()
-    }
-
     boolean isCacheManagerConnected(String cacheManagerName) {
-        if (isBlank(cacheManagerName)) cacheManagerName = 'default'
+        if (isBlank(cacheManagerName)) cacheManagerName = DEFAULT
         retrieveCacheManager(cacheManagerName) != null
     }
 
     void disconnectCacheManager(String cacheManagerName) {
-        if (isBlank(cacheManagerName)) cacheManagerName = 'default'
+        if (isBlank(cacheManagerName)) cacheManagerName = DEFAULT
         storeCacheManager(cacheManagerName, null)
     }
 
-    private CacheManager fetchCacheManager(String cacheManagerName) {
-        if (isBlank(cacheManagerName)) cacheManagerName = 'default'
+    CacheManager fetchCacheManager(String cacheManagerName) {
+        if (isBlank(cacheManagerName)) cacheManagerName = DEFAULT
         CacheManager cacheManager = retrieveCacheManager(cacheManagerName)
         if (cacheManager == null) {
             GriffonApplication app = ApplicationHolder.application

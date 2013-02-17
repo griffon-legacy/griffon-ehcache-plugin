@@ -22,7 +22,11 @@ import groovy.lang.Closure;
 /**
  * @author Andres Almiray
  */
-public interface EhcacheProvider {
+public interface EhcacheContributionHandler {
+    void setEhcacheProvider(EhcacheProvider provider);
+
+    EhcacheProvider getEhcacheProvider();
+
     <R> R withEhcache(Closure<R> closure);
 
     <R> R withEhcache(String cacheManagerName, Closure<R> closure);

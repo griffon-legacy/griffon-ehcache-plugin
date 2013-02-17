@@ -16,18 +16,24 @@
 
 package griffon.plugins.ehcache;
 
-import griffon.util.CallableWithArgs;
-import groovy.lang.Closure;
+import net.sf.ehcache.CacheManager;
 
 /**
  * @author Andres Almiray
  */
-public interface EhcacheProvider {
-    <R> R withEhcache(Closure<R> closure);
+public class DefaultEhcacheProvider extends AbstractEhcacheProvider {
+    private static final DefaultEhcacheProvider INSTANCE;
 
-    <R> R withEhcache(String cacheManagerName, Closure<R> closure);
+    static {
+        INSTANCE = new DefaultEhcacheProvider();
+    }
 
-    <R> R withEhcache(CallableWithArgs<R> callable);
+    public static DefaultEhcacheProvider getInstance() {
+        return INSTANCE;
+    }
 
-    <R> R withEhcache(String cacheManagerName, CallableWithArgs<R> callable);
+    @Override
+    protected CacheManager getCacheManager(String cacheManagerName) {
+        return CacheManagerHolder.getInstance().fetchCacheManager(cacheManagerName);
+    }
 }

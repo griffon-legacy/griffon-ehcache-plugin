@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package griffon.plugins.ehcache;
-
-import griffon.util.CallableWithArgs;
-import groovy.lang.Closure;
+package dsld
 
 /**
  * @author Andres Almiray
  */
-public interface EhcacheProvider {
-    <R> R withEhcache(Closure<R> closure);
 
-    <R> R withEhcache(String cacheManagerName, Closure<R> closure);
-
-    <R> R withEhcache(CallableWithArgs<R> callable);
-
-    <R> R withEhcache(String cacheManagerName, CallableWithArgs<R> callable);
+contribute(enclosingClass(annotatedBy('griffon.plugins.ehcache.EhcacheAware'))) {
+    provider = "Ehcache DSL"
+    delegatesTo "griffon.plugins.ehcache.EhcacheContributionHandler"
 }

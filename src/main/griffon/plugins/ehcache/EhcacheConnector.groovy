@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 the original author or authors.
+ * Copyright 2012-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,42 +20,34 @@ import net.sf.ehcache.Cache
 import net.sf.ehcache.CacheManager
 import net.sf.ehcache.config.CacheConfiguration
 import net.sf.ehcache.config.Configuration
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 import griffon.core.GriffonApplication
-import griffon.util.CallableWithArgs
 import griffon.util.ConfigUtils
 
 /**
  * @author Andres Almiray
  */
 @Singleton
-final class EhcacheConnector implements EhcacheProvider {
+final class EhcacheConnector {
     private bootstrap
 
-    private static final Logger LOG = LoggerFactory.getLogger(EhcacheConnector)
     private static final String CLASSPATH_PREFIX = 'classpath://'
-
-    Object withEhcache(String cacheManagerName = 'default', Closure closure) {
-        CacheManagerHolder.instance.withEhcache(cacheManagerName, closure)
-    }
-
-    public <T> T withEhcache(String cacheManagerName = 'default', CallableWithArgs<T> callable) {
-        return CacheManagerHolder.instance.withEhcache(cacheManagerName, callable)
-    }
+    private static final String DEFAULT = 'default'
 
     // ======================================================
 
     ConfigObject createConfig(GriffonApplication app) {
-        ConfigUtils.loadConfigWithI18n('EhcacheConfig')
+        if (!app.config.pluginConfig.ehcache) {
+            app.config.pluginConfig.ehcache = ConfigUtils.loadConfigWithI18n('EhcacheConfig')
+        }
+        app.config.pluginConfig.ehcache
     }
 
     private ConfigObject narrowConfig(ConfigObject config, String cacheManagerName) {
-        return cacheManagerName == 'default' ? config.cacheManager : config.cacheManagers[cacheManagerName]
+        return cacheManagerName == DEFAULT ? config.cacheManager : config.cacheManagers[cacheManagerName]
     }
 
-    CacheManager connect(GriffonApplication app, ConfigObject config, String cacheManagerName = 'default') {
+    CacheManager connect(GriffonApplication app, ConfigObject config, String cacheManagerName = DEFAULT) {
         if (CacheManagerHolder.instance.isCacheManagerConnected(cacheManagerName)) {
             return CacheManagerHolder.instance.getCacheManager(cacheManagerName)
         }
@@ -66,21 +58,33 @@ final class EhcacheConnector implements EhcacheProvider {
         CacheManagerHolder.instance.setCacheManager(cacheManagerName, cacheManager)
         bootstrap = app.class.classLoader.loadClass('BootstrapEhcache').newInstance()
         bootstrap.metaClass.app = app
-        bootstrap.init(cacheManagerName, cacheManager)
+        resolveEhcacheProvider(app).withEhcache(cacheManagerName) { cmn, cm -> bootstrap.init(cmn, cm) }
         app.event('EhcacheConnectEnd', [cacheManagerName, cacheManager])
         cacheManager
     }
 
-    void disconnect(GriffonApplication app, ConfigObject config, String cacheManagerName = 'default') {
+    void disconnect(GriffonApplication app, ConfigObject config, String cacheManagerName = DEFAULT) {
         if (CacheManagerHolder.instance.isCacheManagerConnected(cacheManagerName)) {
             config = narrowConfig(config, cacheManagerName)
             CacheManager cacheManager = CacheManagerHolder.instance.getCacheManager(cacheManagerName)
             app.event('EhcacheDisconnectStart', [config, cacheManagerName, cacheManager])
-            bootstrap.destroy(cacheManagerName, cacheManager)
+            resolveEhcacheProvider(app).withEhcache(cacheManagerName) { cmn, cm -> bootstrap.destroy(cmn, cm) }
             stopEhcache(config, cacheManager)
             app.event('EhcacheDisconnectEnd', [config, cacheManagerName])
             CacheManagerHolder.instance.disconnectCacheManager(cacheManagerName)
         }
+    }
+
+    EhcacheProvider resolveEhcacheProvider(GriffonApplication app) {
+        def ehcacheProvider = app.config.ehcacheProvider
+        if (ehcacheProvider instanceof Class) {
+            ehcacheProvider = ehcacheProvider.newInstance()
+            app.config.ehcacheProvider = ehcacheProvider
+        } else if (!ehcacheProvider) {
+            ehcacheProvider = DefaultEhcacheProvider.instance
+            app.config.ehcacheProvider = ehcacheProvider
+        }
+        ehcacheProvider
     }
 
     private CacheManager startEhcache(GriffonApplication app, ConfigObject config) {
