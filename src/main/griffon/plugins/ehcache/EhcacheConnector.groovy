@@ -34,8 +34,6 @@ final class EhcacheConnector {
     private static final String CLASSPATH_PREFIX = 'classpath://'
     private static final String DEFAULT = 'default'
 
-    // ======================================================
-
     ConfigObject createConfig(GriffonApplication app) {
         if (!app.config.pluginConfig.ehcache) {
             app.config.pluginConfig.ehcache = ConfigUtils.loadConfigWithI18n('EhcacheConfig')
@@ -44,7 +42,12 @@ final class EhcacheConnector {
     }
 
     private ConfigObject narrowConfig(ConfigObject config, String cacheManagerName) {
-        return cacheManagerName == DEFAULT ? config.cacheManager : config.cacheManagers[cacheManagerName]
+        if (config.containsKey('cacheManager') && cacheManagerName == DEFAULT) {
+            return config.cacheManager
+        } else if (config.containsKey('cacheManagers')) {
+            return config.cacheManagers[cacheManagerName]
+        }
+        return config
     }
 
     CacheManager connect(GriffonApplication app, ConfigObject config, String cacheManagerName = DEFAULT) {

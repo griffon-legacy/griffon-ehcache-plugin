@@ -20,16 +20,17 @@ import griffon.plugins.ehcache.EhcacheConnector
 import griffon.plugins.ehcache.EhcacheEnhancer
 import griffon.plugins.ehcache.EhcacheContributionHandler
 
+import static griffon.util.ConfigUtils.getConfigValueAsBoolean
+
 /**
  * @author Andres Almiray
  */
 class EhcacheGriffonAddon {
     void addonPostInit(GriffonApplication app) {
-        ConfigObject config = EhcacheConnector.instance.createConfig(app)
-        EhcacheConnector.instance.connect(app, config)
+        EhcacheConnector.instance.createConfig(app)
         def types = app.config.griffon?.ehcache?.injectInto ?: ['controller']
-        for(String type : types) {
-            for(GriffonClass gc : app.artifactManager.getClassesOfType(type)) {
+        for (String type : types) {
+            for (GriffonClass gc : app.artifactManager.getClassesOfType(type)) {
                 if (EhcacheContributionHandler.isAssignableFrom(gc.clazz)) continue
                 EhcacheEnhancer.enhance(gc.metaClass)
             }
@@ -37,6 +38,12 @@ class EhcacheGriffonAddon {
     }
 
     Map events = [
+        LoadAddonsEnd: { app, addons ->
+            if (getConfigValueAsBoolean(app.config, 'griffon.ehcache.connect.onstartup', true)) {
+                ConfigObject config = EhcacheConnector.instance.createConfig(app)
+                EhcacheConnector.instance.connect(app, config)
+            }
+        },
         ShutdownStart: { app ->
             ConfigObject config = EhcacheConnector.instance.createConfig(app)
             EhcacheConnector.instance.disconnect(app, config)

@@ -7,7 +7,7 @@ griffon.project.dependency.resolution = {
         mavenLocal()
     }
     dependencies {
-        String ehcacheVersion = '2.6.3'
+        String ehcacheVersion = '2.6.5'
         compile("net.sf.ehcache:ehcache-core:$ehcacheVersion") {
             exclude group: 'org.slf4j'
             excludes 'servlet-api'

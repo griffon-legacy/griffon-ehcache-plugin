@@ -32,6 +32,8 @@ public class DefaultEhcacheProvider extends AbstractEhcacheProvider {
         return INSTANCE;
     }
 
+    private DefaultEhcacheProvider() {}
+
     @Override
     protected CacheManager getCacheManager(String cacheManagerName) {
         return CacheManagerHolder.getInstance().fetchCacheManager(cacheManagerName);

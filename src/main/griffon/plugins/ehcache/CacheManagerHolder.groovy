@@ -40,6 +40,8 @@ class CacheManagerHolder {
         INSTANCE
     }
 
+    private CacheManagerHolder() {}
+
     String[] getCacheManagerNames() {
         List<String> cacheManagerNames = new ArrayList().addAll(cacheManagers.keySet())
         cacheManagerNames.toArray(new String[cacheManagerNames.size()])
